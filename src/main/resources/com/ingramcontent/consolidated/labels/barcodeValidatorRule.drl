@@ -1,0 +1,79 @@
+package com.ingramcontent.consolidated.labels;
+
+import com.ingramcontent.consolidated.labels.model.BarcodeDetail;
+import com.ingramcontent.consolidated.labels.model.ItemStatus;
+
+rule "If Barcode is equal to '9999'"
+	when 
+		barcodeDetail: BarcodeDetail(barcodeValidator != null 
+		&& barcodeValidator.getBarcode() == "9999"
+		)
+	then
+		ItemStatus status = new ItemStatus();
+		status.setSuccess(true);
+		status.setMessageCode("1004");
+		barcodeDetail.setItemStatus(status);
+	end
+	
+rule "If Barcode is null and DoNotPrint is true"
+	when 
+		barcodeDetail: BarcodeDetail(barcodeValidator != null &&
+		barcodeValidator.getBarcode() == null && 
+		barcodeValidator.isDoNotPrint()
+		)
+	then
+		ItemStatus status = new ItemStatus();
+		status.setSuccess(false);
+		status.setMessageCode("1001");
+		barcodeDetail.setItemStatus(status);
+	end	
+	
+rule "If Barcode is not equal to '9999' and toteInformation is not null and Barcode's length is not equal to BarcodeRule's length"
+	when 
+		barcodeDetail: BarcodeDetail(barcodeValidator != null &&
+		barcodeValidator.getBarcode() != null &&
+		barcodeValidator.getBarcode() != "9999" && 
+		toteInformation != null && 
+		toteInformation.getBarcodeRules() != null && 
+		toteInformation.getBarcodeRules().isUsesCustomerSuppliedBarcode() &&
+		toteInformation.getBarcodeRules().getLength() > 0 &&
+		barcodeValidator.getBarcode().length() != toteInformation.getBarcodeRules().getLength()
+		)
+	then
+		ItemStatus status = new ItemStatus();
+		status.setSuccess(false);
+		status.setMessageCode("1003");
+		barcodeDetail.setItemStatus(status);
+	end	
+	
+rule "If Barcode is not equal to '9999' and toteInformation is not null and Barcode's length is equal to BarcodeRule's length"
+	when 
+		barcodeDetail: BarcodeDetail(barcodeValidator != null &&
+		barcodeValidator.getBarcode() != null &&
+		barcodeValidator.getBarcode() != "9999" && 
+		toteInformation != null && 
+		toteInformation.getBarcodeRules() != null && 
+		toteInformation.getBarcodeRules().isUsesCustomerSuppliedBarcode() &&
+		toteInformation.getBarcodeRules().getLength() > 0 &&
+		barcodeValidator.getBarcode().length() == toteInformation.getBarcodeRules().getLength()
+		)
+	then
+		ItemStatus status = new ItemStatus();
+		status.setSuccess(true);
+		status.setMessageCode("1004");
+		barcodeDetail.setItemStatus(status);
+	end	
+	
+rule "If toteInformation is not null and  BarcodeRule's length is equal to Zero"
+	when 
+		barcodeDetail: BarcodeDetail( 
+		toteInformation != null && 
+		toteInformation.getBarcodeRules() != null && 
+		toteInformation.getBarcodeRules().getLength() == 0 
+		)
+	then
+		ItemStatus status = new ItemStatus();
+		status.setSuccess(true);
+		status.setMessageCode("1004");
+		barcodeDetail.setItemStatus(status);
+	end	
